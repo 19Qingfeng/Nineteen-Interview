@@ -536,8 +536,8 @@ JS 中的数据类型，整体上来说只有两类：基本类型和引用类�
 let a = 0; 
 let b = "Hello World" 
 let c = null; 
-let d = { name: '清风' }; 
-let e = ['清风', '小明', 'bear']; 
+let d = { name: '19' }; 
+let e = ['19', '小明', 'bear']; 
 
 a —— Number类型 —— 基本类型 —— 栈内存
 b —— String类型 —— 基本类型 —— 栈内存
@@ -546,7 +546,7 @@ d —— Object —— 引用类型 —— 堆内存
 e —— Array —— 引用类型 —— 堆内存
 ```
 
-![闭包7.jpg](https://i.loli.net/2020/09/04/GPHqX6cIzvbuD7l.png)
+![闭包7.png](https://i.loli.net/2020/09/04/m5ApuhJafVR3ycE.png)
 
 在访问 a、b、c 三个变量时，过程非常简单：**从栈中直接获取该变量的值**。
 
