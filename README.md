@@ -1,12 +1,20 @@
 # 19-Interview
 
+<a  href="#1">JavaScript知识点</a>
+&nbsp; &nbsp; <a  href="#1-1">闭包-从编译原理角度解释词法作用域</a>
+&nbsp; &nbsp; <a  href="#1-2">闭包-探索词法作用域模型</a>
+<a  href="#2">闭包-探索词法作用域模型</a>
+<a  href="#3">闭包的应用</a>
+&nbsp; &nbsp; <a  href="#3-1">模拟私有变量的实现</a>
+&nbsp; &nbsp; <a  href="#3-2">偏函数和函数柯里化</a>
+
 ---
 
-## JavaScript知识点
+## <a name="#1">JavaScript知识点</a>
 
 ---
 
-### 闭包-从编译原理角度解释词法作用域
+### <a name="#1-1">闭包-从编译原理角度解释词法作用域</a>
 
 谈到闭包少不了关于作用域的讲解。要想理解作用域的实现机制，我们需要结合 JS 的编译原理一起来看。
 
@@ -93,7 +101,7 @@ console.log(name)
 
 ---
 
-### 闭包-探索词法作用域模型
+### <a name="#1-2">闭包-探索词法作用域模型</a>
 
 当我们在 JavaScript 语言的范畴里讨论“作用域”这个概念的时候，确实不需要区分它是“词法”还是“动态”，**因为我们 JS 的作用域遵循的就是词法作用域模型**。
 
@@ -224,7 +232,7 @@ console.log(name) // 输出 'BigBear'
 
 ---
 
-### 闭包面试真题集中解析
+### <a name="#2">闭包面试真题集中解析</a>
 
 #### 基础面试题
 
@@ -276,3 +284,210 @@ func3.foo(3);
 * foo()和foo.foo()这两种调用方式的区别。
 
 * func3.foo(), func3.foo()对于上一次调用并不是链式调用。 
+
+---
+
+### <a name="#3">闭包的应用</a>
+
+#### <a name="#3-1">模拟私有变量的实现</a>
+
+首先解释一下私有变量在JS中意味着什么：
+
+``` 
+class User {
+    constructor(username, password) {
+    // 用户名
+    this.username = username
+    // 密码
+    this.password = password
+  }
+  
+  login() {
+    // 使用 fetch 进行登录请求
+    fetch(登录请求的目标url地址, {
+      method: 'POST', // 指定请求方法为post
+      body: JSON.stringify({
+        username,
+        password
+      }), // 请求参数带上用户名和密码
+            ...  // 这里省略其它 fetch 参数
+    }).then(res => res.json())
+  }
+}
+
+```
+
+在这个 User 类里，我们的本意是实现 login 这个能力，并且确保 User 的每一个实例都具备这个能力：
+
+``` 
+let user = new User('19-Qingfeng', '19-Qingfeng123')
+
+// 输出 login 函数的内容，说明 User 的实例中有 login 这个方法
+user.login
+```
+
+我们看到，login 方法已经成功的被实现了。但这里面藏着一个隐患，现在我尝试输出一下 password：
+
+``` 
+user.password // 直接打印出密码
+```
+
+> 这在业务开发中，是一个非常危险的操作：你不能保证你的队友拿到这个 user 之后不会误操作它的 password—— 你甚至不能保证三个月后的自己还会不会记得要保护这个 password！大家谨记，在软件世界中，只要是依赖人的意志才可以确保其安全稳定的东西，都是不可靠的。所以我们需要想办法从代码层面去保护 password。
+
+像 password 这样的变量，**我们希望它仅在对象内部生效，无法从外部触及，这样的变量，就是私有变量。**其实就是java中的private的概念。
+
+这时候就可以使用js闭包的特性去模拟实现private的功能了。
+
+``` 
+// 利用闭包生成IIFE，返回 User 类
+const User = (function () {
+    // 定义私有变量_password
+    let _password
+
+    class User {
+        constructor(username, password) {
+            // 初始化私有变量_password
+            _password = password
+            this.username = username
+        }
+
+        login() {
+            // 这里我们增加一行 console，为了验证 login 里仍可以顺利拿到密码
+            console.log(this.username, _password)
+            // 使用 fetch 进行登录请求
+        }
+    }
+
+    return User
+})()
+
+let user = new User('19-Qingfeng', '19-Qingfeng123')
+
+console.log(user.username)
+console.log(user.password)
+console.log(user._password)
+user.login()
+```
+
+> 此时，User类被一个私有作用域包裹。该作用域内的_password和User类中的password是无法被外部访问到的。
+
+> password和_password只能在User这个函数内使用和被访问到。
+
+这个时候在控制台中打印出User这个类会发现他的constructor和prototype中无论如何也无法访问到password。(除非我们想让他暴露出来)
+
+利用闭包的自由变量特性就可以完美的实现private的功能。
+
+#### <a name="3-2">偏函数和函数柯里化</a>
+
+其实柯里化和偏函数并不复杂（只是名字有点拗口），**他们都是可以帮我们把需要多个入参的函数，转化为需要更少入参的函数的方法。**
+
+> 在计算机科学中，柯里化（英语：Currying），又译为卡瑞化或加里化，是把接受多个参数的函数变换成接受一个单一参数（最初函数的第一个参数）的函数，并且返回接受余下的参数而且返回结果的新函数的技术。
+
+用人话稍微翻译一下:
+柯里化是把**接受 n 个参数的 1 个函数**改造为**只接受 1个参数的 n 个互相嵌套的函数**的过程。也就是fn(a, b, c) 会变成fn(a)(b)(c)。
+
+来看一个比方你就什么都明白了:
+
+我们现在是一家电商公司，旗下有多个电商站点。为了确保商品名的唯一性，我们考虑使用 prefix（一个标识不同站点的前缀字符串）、 type（商品类型）、name（商品原本名称）三个字符串拼接的方式来为商品生成一个完整版名称。对应的方法如下：
+
+``` 
+function generateName(prefix, type, itemName) {
+    return prefix + type + itemName
+}
+```
+
+我们看到这个方法里需要视情况传入 prefix、type、name 参数。如果是作为一个细分工种的 leader，我可能只会负责一个站点的业务。比如我负责了 “大卖网” 的业务，那我每次生成商品名时，都会这样传参：
+
+``` 
+// itemName 是原有商品名
+generateName('大卖网', type, itemName)
+```
+
+发现问题没有？这里面 prefix 其实是一个固定的入参，而我们每次都还要手动把它告诉给 generateName 函数，这很不爽。
+
+如果是作为一个细分工种的程序员，我负责的东西可能更具体了，比如仅仅负责 “大卖网” 站点下的 “母婴” 类商品，那么我每次生成完整名称的时候，调用这个函数就是这样传参的：
+
+``` 
+// itemName 是原有商品名
+generateName('大卖网', '母婴', itemName)
+```
+
+隔壁组的小哥，他只负责 “洗菜网” 站点下的 “生鲜” 类商品，那么他每次是这样传参的：
+
+``` 
+// itemName 是原有商品名
+generateName('洗菜网', '生鲜', itemName)
+```
+
+一样的道理，无论是站在我的角度、还是隔壁组小哥的角度，对我们各自来说，调用 generateName 时其实真正的变量只有 itemName 一个，而我们却每次都不得不把前两个参数也手动传一遍。
+
+此时我们多么希望，有一种魔法，可以让**函数在必要的情况下帮我们 “记住” 一部分入参**。在这个场景下，柯里化可以帮我们很大的忙。现在我们对 generateName 进行柯里化（解析在注释里）：
+
+``` 
+function generateName(prefix) {  
+    return function(type) {
+        return function (itemName) {
+            return prefix + type + itemName
+        }    
+    }
+}
+
+// 生成大卖网商品名专属函数
+var salesName = generateName('大卖网')
+
+// “记住”prefix，生成大卖网母婴商品名专属函数
+var salesBabyName = salesName('母婴')
+
+// "记住“prefix和type，生成洗菜网生鲜商品名专属函数
+var vegFreshName = generateName('洗菜网')('生鲜')
+
+// 输出 '大卖网母婴奶瓶'
+salesBabyName('奶瓶')
+// 输出 '洗菜网生鲜菠菜'
+vegFreshName('菠菜')
+
+// 啥也不记，直接生成一个商品名
+var itemFullName = generateName('洗菜网')('生鲜')('菠菜')
+```
+
+我们看到，在新的 generateName 函数中，我们可以以自由变量的形式将 prefix、type 的值保留在 generateName 内部的两层嵌套的外部作用域里。
+
+这样一来，原有的 generateName (prefix, type, name) 现在经过柯里化已经变成了 generateName (prefix)(type)(itemName)。通过后者这种形式，我们可以选择性地决定是否要 “记住” prefix、type，从而即时地生成更加符合我们预期的、复用程度更高的目标函数。此外，柯里化还可以帮助我们以嵌套的形式把多个函数的能力组合到一起，这就是柯里化的魅力。
+
+#### 偏函数应用与柯里化的辨析
+
+**柯里化是将一个 n 个参数的函数转换成 n 个单参数函数。**你有 10 个入参，就得嵌套 10 层函数，且每层函数都只能有 1 个入参。它的目标就是把函数的入参拆解为精准的 n 部分。
+
+偏函数应用相比之下就 “随意” 一些了。**偏函数是说，固定你函数的某一个或几个参数，然后返回一个新的函数（这个函数用于接收剩下的参数）**。你有 10 个入参，你可以只固定 2 个入参，然后返回一个需要 8 个入参的函数 —— **偏函数应用是不强调 “单参数” 这个概念的。它的目标仅仅是把函数的入参拆解为两部分。**
+
+##### 偏函数应用
+
+除了约束条件与柯里化略有不同，偏函数在动机和实现思路上都与柯里化一致 —— 动机就是为了 “记住” 函数的一部分参数，实现思路就是走闭包。
+
+仍然是上面的例子。我们单纯地把一口气传入 3 个入参，拆分为先传 1 个、再传 2 个，这样就算实现了偏函数应用：
+
+原有的函数形式与调用方法
+
+``` 
+function generateName(prefix, type, itemName) {
+    return prefix + type + itemName
+}
+
+// 调用时一口气传入3个入参
+var itemFullName = generateName('大卖网', '母婴', '奶瓶')
+```
+
+偏函数应用改造：
+
+``` 
+function generateName(prefix) {
+    return function(type, itemName) {
+        return prefix + type + itemName
+    }
+}
+
+// 把3个参数分两部分传入
+var itemFullName = generateName('大卖网')('母婴', '奶瓶')
+```
+
+> 当然闭包的应用不仅仅限于私有变量，偏函数以及函数柯里化还有很多应用，比如封装函数，节流，防抖等等。
