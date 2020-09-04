@@ -6,11 +6,13 @@
 
 &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-2">闭包-探索词法作用域模型</a>
 
-&nbsp; &nbsp; <a  href="#1-2">闭包-探索词法作用域模型</a>
+&nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-2">闭包-探索词法作用域模型</a>
 
 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-2-1">词法作用域机制</a>
+
 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-2-2">动态作用域机制</a>
-&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-2-2-1">欺骗词法作用域</a>
+
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-2-2-1">欺骗词法作用域</a>
 
 &nbsp; &nbsp; &nbsp; &nbsp; <a href="#1-3">闭包真题解析</a>
 
