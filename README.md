@@ -1,26 +1,24 @@
 # 19-Interview
 
-&nbsp; &nbsp; <a  href="#1">JavaScript知识点</a>
+&nbsp; &nbsp; <a  href="#1">1. JavaScript知识点</a>
 
-&nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-1">闭包-从编译原理角度解释词法作用域</a>
+&nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-1">1-1. 闭包-从编译原理角度解释词法作用域</a>
 
-&nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-2">闭包-探索词法作用域模型</a>
+&nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-2">1-2. 闭包-探索词法作用域模型</a>
 
-&nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-2">闭包-探索词法作用域模型</a>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-2-1">1-2-1. 词法作用域机制</a>
 
-&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-2-1">词法作用域机制</a>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-2-2">1-2-2. 动态作用域机制</a>
 
-&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-2-2">动态作用域机制</a>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-2-2-1">1-2-2-1. 欺骗词法作用域</a>
 
-&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-2-2-1">欺骗词法作用域</a>
+&nbsp; &nbsp; &nbsp; &nbsp; <a href="#1-3">1-3. 闭包真题解析</a>
 
-&nbsp; &nbsp; &nbsp; &nbsp; <a href="#1-3">闭包真题解析</a>
+&nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-4">1-4. 闭包的应用</a>
 
-&nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-4">闭包的应用</a>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-4-1">1-4-1. 模拟私有变量的实现</a>
 
-&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-4-1">模拟私有变量的实现</a>
-
-&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-4-2">偏函数和函数柯里化</a>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-4-2">1-4-2. 偏函数和函数柯里化</a>
 
 ---
 
