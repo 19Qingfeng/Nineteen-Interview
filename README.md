@@ -221,3 +221,58 @@ console.log(name) // 输出 'BigBear'
 **这里面需要注意的是，“改变” 仅仅是描述 “创建” 这个动作 —— 创建出来的这个新的作用域。因此它的作用域查询机制仍然是遵循词法作用域模型的。**
 
 > Tips：千万不要用 with 和 eval 写代码。及时面试官问我平常对于eval和with的应用，我会告诉他不好意思我不用这两个东西。
+
+---
+
+### 闭包面试真题集中解析
+
+#### 基础面试题
+
+``` 
+for (var i = 0; i < 5; i++) {
+    setTimeout(function() {
+        console.log(i);
+    }, 1000);
+}
+
+console.log(i); // 5 5 5 5 5 
+```
+
+解决这个问题的三种思路
+
+* 使用let声明
+
+* 匿名函数自执行
+
+* setTimeout传递第三个参数
+
+#### 进阶面试题
+
+``` 
+function foo(a, b) { 
+    console.log(b);
+    return {
+        foo: function (c) { 
+            return foo(c, a); 
+        }
+    }
+}
+
+var func1 = foo(0); // undefined
+func1.foo(1); 
+func1.foo(2);
+func1.foo(3); 
+var func2 = foo(0).foo(1).foo(2).foo(3); 
+var func3 = foo(0).foo(1); 
+func3.foo(2); 
+func3.foo(3); 
+```
+
+> 输出结果可以自己打印结合闭包和作用域链理解。
+> 其实本质就是访问不同的作用域链。
+
+需要注意的Tips:
+
+* foo()和foo.foo()这两种调用方式的区别。
+
+* func3.foo(), func3.foo()对于上一次调用并不是链式调用。 
