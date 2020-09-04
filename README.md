@@ -1,12 +1,19 @@
 # 19-Interview
 
 <a  href="#1">JavaScript知识点</a>
+<br>
 &nbsp; &nbsp; <a  href="#1-1">闭包-从编译原理角度解释词法作用域</a>
+<br>
 &nbsp; &nbsp; <a  href="#1-2">闭包-探索词法作用域模型</a>
+<br>
 <a  href="#2">闭包-探索词法作用域模型</a>
+<br>
 <a  href="#3">闭包的应用</a>
+<br>
 &nbsp; &nbsp; <a  href="#3-1">模拟私有变量的实现</a>
+<br>
 &nbsp; &nbsp; <a  href="#3-2">偏函数和函数柯里化</a>
+<br>
 
 ---
 
