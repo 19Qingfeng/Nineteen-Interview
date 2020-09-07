@@ -34,6 +34,20 @@
 
 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-6-2">1-6-2. 箭头函数this指向</a>
 
+&nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-7">1-7. 改变this指向，深入理解call、apply、bind原理</a>
+
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-7-1">1-7-1. 改变书写代码的方式，进而改变 this 的指向</a>
+
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-7-1-1">1-7-1-1. 箭头函数中的this</a>
+
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-7-1-2">1-7-1-2. 构造函数中的this</a>
+
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-7-2">1-7-2. 显式调用一些方法来帮忙</a>
+
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-7-2-1">1-7-2-1. call、apply、bind改变this区别</a>
+
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-7-2-2">1-7-2-2. call、apply、bind改变this实现原理</a>
+
 ---
 
 ## <a name="1">JavaScript知识点</a>
@@ -923,3 +937,159 @@ obj.func3()
 答案是 1、1、1、1、2。
 
 > 关于如何改变this的指向，一些this指向的特殊用法。咱们在下一节中去探讨。
+
+### <a name="1-7">改变this指向，深入理解call、apply、bind原理</a>
+
+#### <a name="1-7-1">改变书写代码的方式，进而改变 this 的指向</a>
+
+* <a name="1-7-1-1">箭头函数中的this</a>
+
+关于箭头函数就再次强调一下：
+
+``` 
+var a = 1
+
+var obj = {
+  a: 2,
+  // 声明位置
+  showA: () => {
+      console.log(this.a)
+  }
+}
+
+// 调用位置
+obj.showA() // 1
+```
+
+当我们将普通函数改写为箭头函数时，**箭头函数的 this 会在书写阶段（即声明位置）就绑定到它父作用域的 this 上。**无论后续我们如何调用它，都无法再为它指定目标对象 —— 因为箭头函数的 this 指向是静态的，“一次便是一生”。
+
+* <a name="1-7-1-2">构造函数构造函数中的this</a>
+
+当我们使用构造函数去 new 一个实例的时候：
+
+``` 
+function Person(name) {
+  this.name = name
+  console.log(this)
+}
+
+var person = new Person('19-Qingfeng')
+```
+
+构造函数里面的 this 会绑定到我们 new 出来的这个对象上：
+
+![constructor.png](https://i.loli.net/2020/09/07/348cTfvtuWm9dA2.png)
+
+#### <a name="1-7-2">显式地调用一些方法来帮忙</a>
+
+<a name="1-7-2-1">改变 this 指向，我们常用的是 call、 apply 和 bind 方法。</a>
+
+![changeThis.jpg](https://i.loli.net/2020/09/07/qNQ5gGbKvhJrxRl.png)
+
+结合这张图来说明，会清楚得多：
+
+call、apply 和 bind，都是用来改变函数的 this 指向的。
+
+call、apply 和 bind 之间的区别比较大，前者在改变 this 指向的同时，也会把目标函数给执行掉；后者则只负责改造 this，不作任何执行操作。
+
+call 和 apply 之间的区别，则体现在对入参的要求上。前者只需要将目标函数的入参逐个传入即可，后者则希望入参以数组形式被传入。
+
+<a name="1-7-2-2">call 方法的模拟</a>
+在实现 call 方法之前，我们先来看一个 call 的调用示范：
+
+``` 
+var me = {
+  name: '19-Qingfeng'
+}
+
+function showName() {
+  console.log(this.name)
+}
+
+showName.call(me) // 19-Qingfeng
+```
+
+结合 call 表现出的特性，我们首先至少能想到以下两点：
+
+* call 是可以被所有的函数继承的，所以 call 方法应该被定义在 Function.prototype 上
+
+* call 方法做了两件事：
+
+  1. 改变 this 的指向，将 this 绑到第一个入参指定的的对象上去；
+
+  2. 根据输入的参数，执行函数。
+
+结合这两点，我们一步一步来实现 call 方法。首先，改变 this 的指向：
+
+showName 在 call 方法调用后，表现得就像是 me 这个对象的一个方法一样。
+
+所以我们最直接的一个联想是，如果能把 showName 直接塞进 me 对象里就好了，像这样：
+
+（想得到的结果就是调用showName方法同时希望它的this指向me，那么就在me下挂载一个一模一样的showName然后自身去调用，这样就可以解决改变this指向的问题。）
+
+``` 
+var me = {
+  name: '19-Qingfeng', 
+  showName: function() {
+
+    console.log(this.name)
+
+  }
+}
+
+me.showName()
+```
+
+但是这样做有一个问题，因为在 call 方法里，me 是一个入参：
+
+``` 
+showName.call(me) // 19-Qingfeng
+```
+
+用户在传入 me 这个对象的时候， 想做的仅仅是让 call 把 showName 里的 this 给改掉，而不想给 me 对象新增一个 showName 方法。所以说我们在执行完 me.showName 之后，还要记得把它给删掉。遵循这个思路，我们来模拟一下 call 方法（注意看注释）：
+
+``` 
+Function.prototype.myCall = function(context) {
+
+    // step1: 把函数挂到目标对象上（这里的 this 就是我们要改造的的那个函数）
+    context.func = this
+    // step2: 执行函数
+    context.func()
+    // step3: 删除 step1 中挂到目标对象上的函数，把目标对象”完璧归赵”
+    delete context.func
+
+}
+```
+
+有兴趣的同学，可以测试一下我们的 myCall:
+
+showName.myCall(me) // 19-Qingfeng
+
+到这里，我们已经实现了 **“改变 this 的指向”** 这个功能点。现在我们的 myCall 还需要具备**读取函数入参的能力**，类比于 call 的这种调用形式：
+
+``` 
+var me = {
+  name: 'Chris'
+}
+
+function showFullName(surName) {
+  console.log( `${this.name} ${surName}` )
+}
+```
+
+showFullName.call(me, 'Lee') // Chris Lee
+
+直接上代码：
+
+``` 
+Function.prototype.myCall = function(context, ...args) {
+    // step1: 把函数挂到目标对象上（这里的 this 就是我们要改造的的那个函数）
+    context.func = this
+    // step2: 执行函数，利用扩展运算符将数组展开
+    context.func(...args)
+    // step3: 删除 step1 中挂到目标对象上的函数，把目标对象”完璧归赵”
+    delete context.func
+}
+```
+
+> 当然照着这个思路对于apply和bind的实现就特别简单了，以及对于传入null时候的逻辑判断和是否存在原本方法的方法缓存。
