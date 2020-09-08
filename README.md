@@ -58,6 +58,10 @@
 
 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-8-2-1">1-8-2-1. 调用栈</a>
 
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-9">1-9. 原型编程范式与面向对象</a>
+
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-9-1">1-9-1. 原型与原型链</a>
+
 ---
 
 ## <a name="1">JavaScript知识点</a>
@@ -1357,3 +1361,111 @@ testA();
 在执行阶段，如果像例子中的 testB 一样，在函数作用域内部找不到 name 这个变量，那么引擎会沿着作用域链向上找、定位到它对应的父级作用域的上下文、看有没有目标变量，如果还没有，那么就沿着作用域链继续往上定位、直到找到为止。
 
 **注意！这里是沿着作用域链找，可不是沿着调用栈一层一层往上找哦！**调用栈是在执行的过程中形成的，而作用域链可是在书写阶段就决定了。因此，testB 里找不到的变量，绝不会去 testA 里找，而是去全局上下文变量里找！
+
+### <a name="1-9">原型编程范式与面向对象</a>
+
+原型（Prototype）模式其实还是一种设计模式，同时更是一种是一种编程范式（programming paradigm）。
+
+在原型编程范式中，我们正是通过 “复制” 来创建新对象。但这个 “复制” 未必一定要开辟新的内存、把原型对象照着再实现一遍 —— 我们复制的是能力，而不必是实体。比如在 JS 中，我们就是通过使新对象保持对原型对象的引用来做到了 “复制”。
+
+#### JavaScript 中的 “类”
+
+这时有一部分小伙伴估计要炸毛了：啥？？？JavaScript 只能用 Prototype？我看你还活在上世纪，ES6 早就支持类了！现在我们 JavaScript 也是以类为中心的语言了。
+
+这波同学的思想非常危险，因为 ES6 的类其实是原型继承的语法糖:
+
+ECMAScript 2015 中引入的 JavaScript 类实质上是 JavaScript 现有的基于原型的继承的语法糖。类语法不会为 JavaScript 引入新的面向对象的继承模型。 ——MDN
+
+当我们尝试用 class 去定义一个 Dog 类时：
+
+``` 
+class Dog {
+  constructor(name ,age) {
+   this.name = name
+   this.age = age
+  }
+  
+  eat() {
+    console.log('肉骨头真好吃')
+  }
+}
+其实完全等价于写了这么一个构造函数:
+
+function Dog(name, age) {
+  this.name = name
+  this.age = age
+}
+Dog.prototype.eat = function() {
+  console.log('肉骨头真好吃')
+}
+```
+
+所以说，JS 以原型作为其面向对象系统基石的本质并没有被改变。
+
+#### <a name="1-9-1">理解原型与原型链</a>
+
+原型编程范式的核心思想**就是利用实例来描述对象，用实例作为定义对象和继承的基础**。在 JavaScript 中，原型编程范式的体现就是基于原型链的继承。这其中，对原型、原型链的理解是关键。
+
+原型
+在 JavaScript 中，每个构造函数都拥有一个 prototype 属性，它指向构造函数的原型对象，这个原型对象中有一个 construtor 属性指回构造函数；每个实例都有一个__proto__属性，当我们使用构造函数去创建实例时，实例的__proto__属性就会指向构造函数的原型对象。
+
+> children._proto_ === Parent.prototype
+
+> Tips:children的_proto_是一个隐藏属性，我们无法通过普通方式直接访问到。(可以通过Reflect.has(children, "_prtot_")访问)
+
+具体来说，当我们这样使用构造函数创建一个对象时：
+
+``` 
+// 创建一个Dog构造函数
+function Dog(name, age) {
+  this.name = name
+  this.age = age
+}
+Dog.prototype.eat = function() {
+  console.log('肉骨头真好吃')
+}
+// 使用Dog构造函数创建dog实例
+const dog = new Dog('旺财', 3)
+```
+
+这段代码里的几个实体之间就存在着这样的关系：
+
+![prototype.jpg](https://i.loli.net/2020/09/08/gItCvAVBPwSfEZX.jpg)
+
+##### 原型链
+
+现在我在上面那段代码的基础上，进行两个方法调用:
+
+``` 
+// 输出"肉骨头真好吃"
+dog.eat()
+// 输出"[object Object]"
+dog.toString()
+```
+
+明明没有在 dog 实例里手动定义 eat 方法和 toString 方法，它们还是被成功地调用了。**这是因为当我试图访问一个 JavaScript 实例的属性 / 方法时，它首先搜索这个实例本身；当发现实例没有定义对应的属性 / 方法时，它会转而去搜索实例的原型对象；如果原型对象中也搜索不到，它就去搜索原型对象的原型对象，这个搜索的轨迹，就叫做原型链。**
+
+以我们的 eat 方法和 toString 方法的调用过程为例，它的搜索过程就是这样子的：
+
+![prtotype2.jpg](https://i.loli.net/2020/09/08/KU163dBm4tcLlWC.jpg)
+
+楼上这些彼此相连的 prototype，就构成了所谓的 “原型链”。
+
+注： **几乎所有 JavaScript 中的对象都是位于原型链顶端的 Object 的实例，除了 Object.prototype**（当然，如果我们手动用 Object.create(null) 创建一个没有任何原型的对象，那它也不是 Object 的实例）。
+
+###### Object.create(a[, b])
+
+Object.create(a)
+注意：参数是直接作为实例的原型对象, a._proto_ === a。
+
+``` 
+ function People() {
+
+    }
+    People.prototype.eat = () => {
+      console.log("eat")
+    }
+    const a = Object.create(People.prototype)
+
+    a.eat()
+```
