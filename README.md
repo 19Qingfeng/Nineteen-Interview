@@ -48,23 +48,23 @@
 
 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-7-2-2">1-7-2-2. call、apply、bind改变this实现原理</a>
 
-&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-8">1-8. 执行上下文与调用栈</a>
+&nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-8">1-8. 执行上下文与调用栈</a>
 
-&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-8-1">1-8-1. 全局上下文的创建和组成</a>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-8-1">1-8-1. 全局上下文的创建和组成</a>
 
-&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-8-1-1">1-8-1-1. 变量提升的本质</a>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-8-1-1">1-8-1-1. 变量提升的本质</a>
 
-&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-8-2">1-8-2. 函数上下文的创建和组成</a>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-8-2">1-8-2. 函数上下文的创建和组成</a>
 
-&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-8-2-1">1-8-2-1. 调用栈</a>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-8-2-1">1-8-2-1. 调用栈</a>
 
-&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-9">1-9. 原型编程范式与面向对象</a>
+&nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-9">1-9. 原型编程范式与面向对象</a>
 
-&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-9-1">1-9-1. 原型与原型链</a>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-9-1">1-9-1. 原型与原型链</a>
 
-&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-10">1-10. 原型与面向对象真题解析</a>
+&nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-10">1-10. 原型与面向对象真题解析</a>
 
-&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-10-1">1-10. new关键字究竟发生了什么</a>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-10-1">1-10. new关键字究竟发生了什么</a>
 
 ---
 
