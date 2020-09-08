@@ -62,6 +62,10 @@
 
 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-9-1">1-9-1. 原型与原型链</a>
 
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-10">1-10. 原型与面向对象真题解析</a>
+
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-10-1">1-10. new关键字究竟发生了什么</a>
+
 ---
 
 ## <a name="1">JavaScript知识点</a>
@@ -1469,3 +1473,231 @@ Object.create(a)
 
     a.eat()
 ```
+
+### <a name="1-10">原型与面向对象真题解析</a>
+
+##### 命题点一：原型基础 + 构造函数基础
+
+``` 
+var A = function() {};
+A.prototype.n = 1;
+var b = new A();
+A.prototype = {
+  n: 2,
+  m: 3
+}
+var c = new A();
+
+console.log(b.n);
+console.log(b.m);
+
+console.log(c.n);
+console.log(c.m);
+
+// 1 undefined 2 3
+```
+
+###### Step1：明确原型关系：
+
+b 实例与 A 之间的关系：
+
+![setp1.jpg](https://i.loli.net/2020/09/08/sSKYbNU5mlZzcI6.png)
+
+c 实例与 A 之间的关系：
+
+![setp2.jpg](https://i.loli.net/2020/09/08/GA4xWhOgoHPvM8p.png)
+
+###### Step2：关键思路解析 - 构造函数的工作机理
+
+相信很多同学对 c 实例没有疑问，更多是疑惑 b 实例为什么明明和 c 实例继承自一个原型，却有着不同的表现。
+
+#### <a name="1-10-1">new关键字究竟发生了什么</a>
+
+这里需要大家注意一个知识点：**当我们用 new 去创建一个实例时，new 做了什么？**它做了这四件事：
+
+* 为这个新的对象开辟一块属于它的内存空间
+
+* 把函数体内的 this 指到 1 中开辟的内存空间去并且使用this调用父类构造函数(相当于Parent.call(children))
+
+* 将新对象的 _ proto_ 这个属性指向对应构造函数的 prototype 属性，把实例和原型对象关联起来( children._ptoto_ = Parent.prototype )
+
+* 执行函数体内的逻辑，最后即便你没有手动 return，构造函数也会帮你把创建的这个新对象 return 出来(return this)
+
+注意第二步哦，第二步执行完之后，**实例对象的原型就把构造函数的 prototype 的引用给存下来了**。那么在 b 实例创建的时候，构造函数的 prototype 是啥呢？就是这么个对象：
+
+![stp3.jpg](https://i.loli.net/2020/09/08/DWGQoTHnKIwiP78.png)
+
+所以 b 实例输出的 n 就是 1；同时由于它没有 m 属性，直接输出 undefined。
+
+有同学会说了，可是后面我们还对 A 的 prototype 做了修改啊！b 如果存的是引用，它应该感知到我这个修改啊！注意你修改 A 的 prototype 的形式：
+
+``` 
+A.prototype = {
+  n: 2,
+  m: 3
+}
+```
+
+**这严格意义上来说不算修改，而是一个重新赋值操作。这个动作的本质是把 A 的 prototype 指向了一个全新的 js 对象：**
+
+由于b实例缓存的引用是之前的原型对象，现在进行了重新赋值相当于重新开辟了一片内存空间所以b仍然指向旧的引用而新创建的c实例指向的就是已经改变过后A的prototype了。
+
+![result.jpg](https://i.loli.net/2020/09/08/WEniyZGmkDfIoAa.png)
+
+从图中我们可以看出，A 单方面切断了和旧 prototype 的关系，而 b 却仍然保留着旧 prototype 的引用。这就是造成 b 实例和 c 实例之间表现差异的原因。
+
+其实对比这个例子就能明白差距在哪里了：
+
+``` 
+var A = function () {};
+A.prototype.n = 1;
+var b = new A();
+A.prototype["n"] = 2
+A.prototype["m"] = 3
+
+var c = new A();
+
+// 原型 共享一个对象
+
+console.log(b.n); // 2
+console.log(b.m); // 3
+
+console.log(c.n); // 2
+console.log(c.m); // 3
+```
+
+他和上边的差距在于**一个是对原型对象直接的赋值(重新开辟一片地址)，一个是对原型对象属性的修改(未改变引用)**。所以造成的结果也就不同了。
+
+##### 自有属性与原型继承属性
+
+``` 
+function A() {
+    this.name = 'a'
+    this.color = ['green', 'yellow']
+ }
+ function B() {
+   
+ }
+ B.prototype = new A()
+ var b1 = new B()
+ var b2 = new B()
+ 
+ b1.name = 'change'
+ b1.color.push('black')
+
+console.log(b2.name) // 'a'
+console.log(b2.color) // ["green", "yellow", "black"]
+```
+
+好好回忆new一个对象发生了什么：
+当执行到
+
+``` 
+B.prototype = new A()
+```
+
+有两步操作：
+
+1. A.call(B.prototype):B.prototype上将会增加两个实例属性。
+
+2. B.prototype._proto_ = A.prototype
+
+再重新结合代码就会明白发生了什么了。
+
+实际上b1和b2共享了一个原型链上的原型对象。
+
+Step1：画出原型链图
+
+这道题有一个迷惑你的地方，就是没有直接用 A 去 new 对象，而是找了一个 “中间人” B，这样就达到了把原型链复杂化的目的。不过问题不大，咱们图照画：
+
+![setp2-1.jpg](https://i.loli.net/2020/09/08/kg347q96RbhPeOp.png)
+
+Step2：读操作与写操作的区别
+这里呢，大家看到 b1 和 b2 之间的一个区别就是 b1 有自有的 name 属性。有的同学可能会迷惑，这一行代码：
+
+``` 
+b1.name = 'change'
+```
+
+在查找 b1 的 name 属性时，难道不应该沿着原型链去找，然后定位并修改原型链上的 name 吗？
+
+实际上，这个 “逆流而上” 的变量定位过程，当且仅当我们在进行 “读” 操作时会发生。
+
+楼上这行代码，是一个赋值动作，是一个 “写” 操作。在写属性的过程中，如果发现 name 这个属性在 b1 上还没有，那么就会原地为 b1 创建这个新属性，而不会去打扰原型链了。
+
+那么 color 这个属性，看上去也像是一个 “写” 操作，为什么它没有给 b2 新增属性、而是去修改了原型链上的 color 呢？首先，这样的写法：
+
+``` 
+b1.color.push('black')
+```
+
+包括这样的写法（修改对象的属性值）：
+
+``` 
+b1.color.attribute = 'xxx'
+```
+
+它实际上并没有改变对象的引用，而仅仅是在原有对象的基础上修改了它的内容而已。像这种不触发引用指向改变的操作，它走的就是 原型链 查询 + 修改 的流程，而非原地创建新属性的流程。
+
+如何把它变成写操作呢？直接赋值：
+
+``` 
+b1.color = ['newColor']
+```
+
+这样一来，color 就会变成 b1 的一个自有属性了。 因为 [‘newColor’] 是一个全新的数组，它对应着一个全新的引用。对 js 来说，这才是真正地在向 b1 “写入” 一个新的属性。
+
+##### 构造函数综合考察
+
+``` 
+function A() {}
+function B(a) {
+    this.a = a;
+}
+function C(a) {
+    if (a) {
+        this.a = a;
+    }
+}
+A.prototype.a = 1;
+B.prototype.a = 1;
+C.prototype.a = 1;
+
+console.log(new A().a); // 1
+console.log(new B().a); // undefined
+console.log(new C(2).a); // 2
+```
+
+此题我们仍然回想一下new发生了，new一个对象的时候，牢记返回的是new出来的实例, 以及new关键字对于实例上属性的挂载和对于原型的访问规则。
+
+* 查找属性，实例存在返回实例属性。
+
+* 实例不存在去实例原型上去找，找不到返回undefined。
+
+结合我们前面对构造函数的分析，当我们像这样通过 new + 构造函数创建新对象的时候：
+
+``` 
+function C(a) {
+    if (a) {
+        this.a = a;
+    }
+}
+
+var c = new C(2)
+```
+
+实际上发生了四件事情：
+
+为 c 实例开辟一块属于它的内存空间
+把函数体内的 this 指到 1 中开辟的内存空间去
+将实例 c 的 _ proto_ 这个属性指向构造函数 C 的 prototype 属性
+执行函数体内的逻辑，最后构造函数会帮你把创建的这个 c 实例 return 出来
+我们基于这个结论来看 console 中的三次调用：
+
+* new A ().a：构造函数逻辑为空，返回的实例对象 _ proto_ 中包含了 a = 1 这个属性。new A ().a 时，发现实例对象本身没有 a，于是沿着原型链找到了原型中的 a，输出其值为 1。
+* new B ().a：构造函数中会无条件为实例对象创建一个自有属性 a，这个 a 的值以入参为准。这里我们的入参是 undefined，所以 a 值也是 undefined。
+* new C (2).a：构造函数中会有条件地为实例对象创建一个自有属性 a—— 若确实存在一个布尔判定不为 false 的入参 a，那么为实例对象创建对应的 a 值；否则，不做任何事情。这里我们传入了 2，因此实例输出的 a 值就是 2。
+
+其实原型上的问题，牢记new关键字发生了什么以及原型链查找规则就可以了。
+
+以及构造继承和原型继承的区别，他们的组合继承都是必须要掌握的。
