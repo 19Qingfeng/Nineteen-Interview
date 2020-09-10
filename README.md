@@ -80,6 +80,8 @@
 
 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#2-2-2">2-2-2. Generator</a>
 
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#2-2-3">2-2-3. Async/Await</a>
+
 ---
 
 ## <a name="1">JavaScript知识点</a>
