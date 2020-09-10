@@ -82,6 +82,16 @@
 
 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#2-2-3">2-2-3. Async/Await</a>
 
+&nbsp; &nbsp; &nbsp; &nbsp; <a  href="#3">3. ES6.7.8.9.10.11</a>
+
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#3-1">3-1. Promise专题问题</a>
+
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#3-1-1">3-1-1. 理解Promise</a>
+
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#3-1-2">3-1-2. Promise解决的问题</a>
+
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#3-1-3">3-1-3. Promise常见静态方法</a>
+
 ---
 
 ## <a name="1">JavaScript知识点</a>
@@ -2040,3 +2050,182 @@ async function httpRequest() {
 是不是觉得这个“暂停”、”唤醒“的操作，和 generator 异步非常相似？事实上，async/await 本身就是 generator 异步方案的语法糖。它的诞生主要就是为了这个单纯而美好的目的——让你写得更爽，让你写出来的代码更美。
 
 注：async/await 和 generator 方案，相较于 Promise 而言，有一个重要的优势：**Promise 的错误需要通过回调函数捕获，try catch 是行不通的。而 async/await 和 generator 允许 try/catch。**
+
+---
+
+## <a name="3">ES6.7.8.9.10.11</a>
+
+[ES6-11可以参照一下我另一篇关于ES6-11的详细语法介绍。](https://github.com/19Qingfeng/EcmaScript6-11)
+
+### <a name="3-1">Promise专题问题</a>
+
+#### <a name="3-1-1">问：说说你理解的 Promise</a>
+
+把握**代理对象、三个状态、状态切换机制**这三点。
+
+Promise 对象是一个代理对象。它接受你传入的 executor（执行器）作为入参，允许你把异步任务的成功和失败分别绑定到对应的处理方法上去。一个 Promise 实例有三种状态：
+
+* pending 状态，表示进行中。这是 Promise 实例创建后的一个初始态；
+
+* fulfilled 状态，表示成功完成。这是我们在执行器中调用 resolve 后，达成的状态；
+
+* rejected 状态，表示操作失败、被拒绝。这是我们在执行器中调用 reject后，达成的状态；
+
+Promise实例的状态是可以改变的，但它只允许被改变一次。当我们的实例状态从 pending 切换为 rejected 后，就无法再扭转为 fulfilled，反之同理。当 Promise 的状态为 resolved 时，会触发其对应的 then 方法入参里的 onfulfilled 函数；当 Promise 的状态为 rejected 时，会触发其对应的 then 方法入参里的 onrejected 函数。
+
+#### <a name="3-1-2">Promise 的出现是为了解决什么问题？</a>
+
+不用多累赘了，callback Hell。
+
+#### <a name="3-1-3">Promise 常见静态方法有哪些？各自是干嘛的？</a>
+
+**all、race、reject 和 resolve, **以及ES11最新的**allSettled**。
+
+Promise的方法有以下几种：
+
+* Promise.all(iterable)：这个方法返回一个新的 promise 对象，该 promise 对象在 iterable 参数对象里所有的 promise 对象都成功的时候才会触发成功，一旦有任何一个 iterable 里面的 promise 对象失败则立即触发该 promise 对象的失败。
+
+``` 
+var p1 = Promise.resolve('1号选手');
+var p2 = '2号选手';
+var p3 = new Promise((resolve, reject) => {
+  setTimeout(resolve, 100, "3号选手");
+}); 
+Promise.all([p1, p2, p3]).then(values => { 
+  console.log(values); //  ["1号选手", "2号选手", "3号选手"]
+});
+```
+
+* Promise.race(iterable)：当 iterable 参数里的任意一个子 promise 被成功或失败后，父 promise 马上也会用子 promise 的成功返回值或失败详情作为参数调用父 promise 绑定的相应处理函数，并返回该 promise 对象。
+
+``` 
+var p1 = new Promise(function(resolve, reject) { 
+
+    setTimeout(resolve, 100, "1号选手"); 
+
+}); 
+var p2 = new Promise(function(resolve, reject) { 
+
+    setTimeout(resolve, 50, "2号选手"); 
+
+}); 
+
+// 这里因为 2 号选手返回得更早，所以返回值以 2号选手为准
+Promise.race([p1, p2]).then(function(value) {
+  console.log(value); //  "2号选手"
+}); 
+```
+
+* Promise.reject(reason)： 返回一个状态为失败的Promise对象，并将给定的失败信息传递给对应的处理方法
+
+* Promise.resolve(value)：它返回一个 Promise 对象，但是这个对象的状态由你传入的value决定，情形分以下两种：
+
+  + 如果传入的是一个带有 then 方法的对象（我们称为 thenable 对象），返回的Promise对象的最终状态由then方法执行决定
+
+  
+
+  + 否则的话，返回的 Promise 对象状态为 fulfilled，同时这里的 value 会作为 then 方法中指定的 onfulfilled 的入参
+
+* Promise.allSettled(iterable)
+
+ES11提出了Promise.allSettled()，它的出现就是为了解决Promise.all()的痛点。
+
+接受一个Iterator对象，相较于all方法。无论iterable中哪一个失败或者成功它最终都会返回一个数组，数组中按照顺序包含每一个Promise返回的对象。
+
+* 当某一个Promise成功时候，返回的 { status: 'fulfilled', value: { // resolve的value } }, 
+
+* 当某一个失败时，数组内部对应元素返回 { status: 'rejected', reason: { //reject的值 } }, 
+
+* 注意成功是value，失败是reason。
+
+总之它解决的就是Promise.all() 具有并发执行异步任务的能力。但它的最大问题就是如果其中某个任务出现异常(reject)，所有任务都会挂掉，Promise直接进入 reject 状态。
+
+如果并发任务中，allSettled无论一个任务正常或者异常，都会返回对应的的状态。
+
+#### 真题
+
+##### First
+
+``` 
+const promise = new Promise((resolve, reject) => {
+    console.log(1);
+    resolve();
+    console.log(2);
+});
+
+promise.then(() => {
+    console.log(3);
+});
+
+console.log(4);
+```
+
+运行结果：
+
+``` 
+1
+2
+4
+3
+```
+
+考点点拨：Promise 中的处理函数是异步任务
+
+then 方法中传入的任务是一个异步任务。resolve() 这个调用，作用是将 Promise 的状态从 pending 置为 fulfilled，这个新状态会让 Promise 知道“我的 then 方法中那个任务可以执行了”——注意是”可以执行了“，而不是说”立刻就会执行“。毕竟作为一个异步任务，它的基本修养就是要等同步代码执行完之后再执行。所以说数字 3 的输出排在最后。
+
+##### Second
+
+``` 
+const promise = new Promise((resolve, reject) => {
+  resolve('第 1 次 resolve')
+  console.log('resolve后的普通逻辑')
+  reject('error')
+  resolve('第 2 次 resolve')
+})
+ 
+promise
+.then((res) => {
+  console.log('then: ', res)
+})
+.catch((err) => {
+  console.log('catch: ', err)
+})
+```
+
+运行结果：
+
+``` 
+resolve后的普通逻辑
+then:  第 1 次 resolve
+```
+
+考点点拨：Promise 对象的状态只能被改变一次
+分析：这段代码里，promise 初始状态为 pending，我们在函数体第一行就用 resolve 把它置为了 fulfilled 态。这个切换完成后，后续所有尝试进一步作状态切换的动作全部不生效，所以后续的 reject、resolve大家直接忽略掉就好；需要注意的是，**我们忽略的是第一次 resolve 后的 reject、resolve，而不是忽略它身后的所有代码。**因此 console.log(‘resolve后的普通逻辑’) 这句，仍然可以正常被执行。至于这里为啥它输出在 ”then: 第 1 次 resolve“ 的前面，原因和真题1是一样一样的~
+
+##### Third
+
+``` 
+Promise.resolve(1)
+  .then(Promise.resolve(2))
+  .then(3)
+  .then()
+  .then(console.log)
+```
+
+运行结果：
+
+``` 
+1
+```
+
+###### Promise 值穿透问题
+
+分析：大家知道，then 方法里允许我们传入两个参数：onFulfilled（成功态的处理函数）和 onRejected（失败态的处理函数）。
+
+你可以两者都传，也可以只传前者或者后者。**但是无论如何，then 方法的入参只能是函数。万一你想塞给它一些乱七八糟的东西，它就会“翻脸不认人”。**
+
+具体到我们这个题里，第一个 then 方法中传入的是一个 Promise 对象，then 说：”我不认识“；第二个 then 中传入的是一个数字， then 继续说”我不认识“；第四个干脆啥也没穿，then 说”入参undefined了，拜拜“；直到第五个入参，一个函数被传了进来，then 哭了：”终于等到一个我能处理的！“，于是只有最后一个入参生效了。
+
+在这个过程中，**我们最初 resolve 出来那个值，穿越了一个又一个无效的 then 调用，就好像是这些 then 调用都是透明的、不存在的一样，因此这种情形我们也形象地称它是 Promise 的“值穿透”。**
+
+需要注意console.log也是函数。
