@@ -66,6 +66,14 @@
 
 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#1-10-1">1-10. new关键字究竟发生了什么</a>
 
+&nbsp; &nbsp; <a  href="#2">2. JavaScript中的异步</a>
+
+&nbsp; &nbsp; &nbsp; &nbsp; <a  href="#2-1">2-1. 异步编程模型与异步解决方案</a>
+
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#2-1-1">2-1-1. 异步进化史</a>
+
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#2-1-2">2-1-2. 回调函数时期以及早期解决异步途径</a>
+
 ---
 
 ## <a name="1">JavaScript知识点</a>
@@ -1701,3 +1709,135 @@ var c = new C(2)
 其实原型上的问题，牢记new关键字发生了什么以及原型链查找规则就可以了。
 
 以及构造继承和原型继承的区别，他们的组合继承都是必须要掌握的。
+
+---
+
+## <a name="2">JavaScript中的异步</a>
+
+---
+
+### <a name="2-1">异步编程模型与异步解决方案</a>
+
+#### <a name="2-1-1">异步进化史</a>
+
+异步在实现上，依赖一些特殊的语法规则。从整体上来说，异步方案经历了如下的四个进化阶段：
+
+**回调函数 —> Promise —> Generator —> async/await**。
+
+#### <a name="2-1-2">“回调函数” 时期</a>
+
+所谓 “回调函数” 时期，这里严格来说指代的其实是 Promise 出现前的这么一个相对早期的阶段。在这个阶段里，回调是异步最常见、最基本的实现手段，却不是唯一的招数 —— 像事件监听、发布订阅这样的方式，也经常为我们所用。
+
+##### 事件监听
+
+这种形式相信每位前端同学都不陌生，给目标 DOM 绑定一个监听函数，我们用的最多的是 addEventListener：
+
+``` 
+document.getElementById('#myDiv').addEventListener('click', function (e) {
+  console.log('我被点击了')
+}, false);
+```
+
+通过给 id 为 myDiv 的一个元素绑定了点击事件的监听函数，**我们把任务的执行时机推迟到了点击这个动作发生时。此时，任务的执行顺序与代码的编写顺序无关，只与点击事件有没有被触发有关。**
+
+通过给 id 为 myDiv 的一个元素绑定了点击事件的监听函数，我们把任务的执行时机推迟到了点击这个动作发生时。此时，任务的执行顺序与代码的编写顺序无关，只与点击事件有没有被触发有关。
+
+##### 发布订阅
+
+发布订阅，是一种相当经典的设计模式。
+这里我们直接用 jQuery 中封装过的发布订阅做讲解，会更容易理解一些。
+比如说我们想在名为 trigger 的信号被触发后，做点事情，我们可以订阅 trigger 信号：
+
+``` 
+function consoleTrigger() {
+    console.log('trigger事件被触发')
+}
+jQuery.subscribe('trigger',consoleTrigger);
+```
+
+这样当 trigger 被触发时，上面对应的回调任务就会执行了：
+
+``` 
+function publishTrigger() {
+
+    jQuery.publish('trigger');
+
+}
+
+// 2s后，publishTrigger方法执行，trigger信号发布，consoleTrigger就会执行了
+setTimeout(publishTrigger, 2000)
+```
+
+##### 回调函数
+
+回调函数用的最多的地方其实是在 Node 环境下，我们难免需要和引擎外部的环境有一些交流：比如说我要利用网络模块发起请求、或者要对外部文件进行读写等等。这些任务都是异步的，我们通过回调的形式来实现它们。
+
+``` 
+// -- 异步读取文件
+fs.readFile(filePath,'utf8',function(err,data){
+    if(err) {
+      throw err;
+    }
+    console.log(data);// 输出文件内容
+});
+```
+
+``` 
+const https = require('https');
+ 
+// 发起网络请求
+https.get('目标接口', (res) => {
+  console.log(data)
+ 
+}).on("error", (err) => {
+  console.log("Error: " + err.message);
+});
+```
+
+##### “回调地狱”
+
+当回调只有一层的时候，看起来感觉没什么问题。但是一旦回调函数嵌套的层级变多了之后，代码的可读性和可维护性将面临严峻的挑战。比如当我们想发起连环网络请求时：
+
+``` 
+const https = require('https');
+
+https.get('目标接口1', (res) => {
+  console.log(data)
+  https.get('目标接口2', (res) => {
+    https.get('目标接口3'),  (res) => {
+        console.log(data)
+        https.get('目标接口4', (res) => {
+          https.get('目标接口5', (res) => {
+            console.log(data)
+            .....
+            // 无尽的回调
+          }
+        }
+    }
+  }
+})
+```
+
+这种情形一点也不夸张。而且其实不只是在 http、在 ajax 这样的网络请求场景里有这种谜之代码，在 “Promise 前” 的那个上古时期，我们经常被这种深不见底的回调困扰：
+
+``` 
+func1(function (resultA) {
+  func2(resultA, function (resultB) {
+    func3(resultB, function (resultC) {
+      func4(resultC, function (resultD) {
+        func5(resultD, function (resultE) {
+          func6(resultE, function (resultF) {
+            console.log(resultF);
+            ...
+            // 无尽的回调
+          });
+        });
+      });
+    });
+  });
+});
+```
+
+这样写代码非常糟糕，它会带来很多问题，最直接的就是：**可读性和可维护性被破坏**。
+
+这时候如果你往里面再添油加醋，比如说加上 this、加上箭头函数、加上自由变量啥的，这段代码再过一个星期回来，你自己都很难看懂，更不要说后来的维护者了。
