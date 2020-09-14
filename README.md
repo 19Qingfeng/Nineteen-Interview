@@ -92,6 +92,8 @@
 
 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#3-1-3">3-1-3. Promise常见静态方法</a>
 
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#3-2">3-2. 启底PromiseA+，从零实现Promise</a>
+
 ---
 
 ## <a name="1">JavaScript知识点</a>
@@ -2229,3 +2231,281 @@ Promise.resolve(1)
 在这个过程中，**我们最初 resolve 出来那个值，穿越了一个又一个无效的 then 调用，就好像是这些 then 调用都是透明的、不存在的一样，因此这种情形我们也形象地称它是 Promise 的“值穿透”。**
 
 需要注意console.log也是函数。
+
+### <a  name="3-2">PromiseA+，从零实现Promise</a>
+
+``` 
+new Promise((resolve, reject) => {
+    resolve("success")
+}).then(resolve => {
+    console.log(resolve, 'resolve')
+})
+```
+
+我们现在回忆一下之前咱们用过的 Promise。从使用的感受上来说，一个 Promise 应该具备的最基本的特征，至少有以下两点：
+
+* 可以接收一个 executor 作为入参
+
+* 具备 pending、resolved 和 rejected 这三种状态
+
+我们先从这最基本的轮廓入手（解析在逐行注释里，本节注释非常重要）：
+
+``` 
+function CutePromise(executor) {
+    // value 记录异步任务成功的执行结果
+    this.value = null;
+    // reason 记录异步任务失败的原因
+    this.reason = null;
+    // status 记录当前状态，初始化是 pending
+    this.status = 'pending';
+     
+    // 把 this 存下来，后面会用到
+    var self = this;
+  
+    // 定义 resolve 函数
+    function resolve(value) {
+        // 异步任务成功，把结果赋值给 value
+        self.value = value;
+        // 当前状态切换为 resolved
+        self.status = 'resolved'; 
+    }
+    
+    // 定义 reject 函数
+    function reject(reason) {
+        // 异步任务失败，把结果赋值给 value
+        self.reason = reason; 
+        // 当前状态切换为 rejected
+        self.status = 'rejected';
+    }
+  
+    // 把 resolve 和 reject 能力赋予执行器
+    executor(resolve, reject);
+}
+```
+
+#### then 方法的行为
+
+每一个 promise 实例一定有个 then 方法，由此我们不难想到，then 方法应该装在 Promise 构造函数的原型对象上（解析在逐行注释里，本节注释非常重要）：
+
+``` 
+// then 方法接收两个函数作为入参（可选）
+CutePromise.prototype.then = function(onResolved, onRejected) {
+  
+    // 注意，onResolved 和 onRejected必须是函数；如果不是，我们此处用一个透传来兜底
+    if (typeof onResolved !== 'function') {
+        onResolved = function(x) {return x};
+    }
+    if (typeof onRejected !== 'function') {
+        onRejected = function(e) {throw e};
+    }
+
+    // 依然是保存 this
+    var self = this;
+    // 判断是否是 resolved 状态
+    if (self.status === 'resolved') {
+        // 如果是 执行对应的处理方法
+        onResolved(self.value);
+    } else if (self.status === 'rejected') {
+        // 若是 rejected 状态，则执行 rejected 对应方法
+        onRejected(self.reason);
+    }
+};
+```
+
+来试试成果：
+
+``` 
+new CutePromise(function (resolve, reject) {
+    resolve('成了！');
+}).then(function (value) {
+    console.log(value);
+}, function (reason) {
+    console.log(reason);
+});
+
+// 输出 “成了！”
+
+new CutePromise(function (resolve, reject) {
+    reject('错了！');
+}).then(function (value) {
+    console.log(value);
+}, function (reason) {
+    console.log(reason);
+});
+
+// 输出“错了！”
+```
+
+#### 链式调用
+
+想必大家还记得，在 Promise 中，then 方法和 catch 方法都是可以通过链式调用这种形式无限调用下去的。这里先给大家透个底儿：Promise/A+ 规范里，其实压根儿没提 catch 的事儿，它只强调了 then 的存在、约束了 then 的行为。所以咱们此处，就是要实现 then 的链式调用。
+
+要想实现链式调用，咱们考虑以下几个重大的改造点：
+
+* then方法中应该直接把 this 给 return 出去（链式调用常规操作）；
+
+* 链式调用允许我们多次调用 then，多个 then 中传入的 onResolved（也叫onFulFilled） 和 onRejected 任务，我们需要把它们维护在一个队列里；
+
+* **要想办法确保 then 方法执行的时机，务必在 onResolved 队列 和 onRejected 队列批量执行前**。不然队列任务批量执行的时候，任务本身都还没收集完，就乌龙了。一个比较容易想到的办法就是把**批量执行这个动作包装成异步任务**，这样就能确保它一定可以在同步代码之后执行了。
+
+OK，明确了改造点之后，咱们动手来完善构造函数这一侧的代码：
+
+``` 
+function CutePromise(executor) {
+    // value 记录异步任务成功的执行结果
+    this.value = null;
+    // reason 记录异步任务失败的原因
+    this.reason = null;
+    // status 记录当前状态，初始化是 pending
+    this.status = 'pending';
+  
+    // 缓存两个队列，维护 resolved 和 rejected 各自对应的处理函数
+    this.onResolvedQueue = [];
+    this.onRejectedQueue = [];
+         
+    // 把 this 存下来，后面会用到
+    var self = this;
+  
+    // 定义 resolve 函数
+    function resolve(value) {
+        // 如果不是 pending 状态，直接返回
+        if (self.status !== 'pending') {
+            return;
+        }
+        // 异步任务成功，把结果赋值给 value
+        self.value = value;
+        // 当前状态切换为 resolved
+        self.status = 'resolved'; 
+        // 用 setTimeout 延迟队列任务的执行
+        setTimeout(function(){
+            // 批量执行 resolved 队列里的任务
+            self.onResolvedQueue.forEach(resolved => resolved(self.value)); 
+        });
+    }
+        
+    // 定义 reject 函数
+    function reject(reason) {
+        // 如果不是 pending 状态，直接返回
+        if (self.status !== 'pending') {
+            return;
+        }
+        // 异步任务失败，把结果赋值给 value
+        self.reason = reason; 
+        // 当前状态切换为 rejected
+        self.status = 'rejected';
+        // 用 setTimeout 延迟队列任务的执行
+        setTimeout(function(){
+            // 批量执行 rejected 队列里的任务
+            self.onRejectedQueue.forEach(rejected => rejected(self.reason));
+        });
+    }
+  
+    // 把 resolve 和 reject 能力赋予执行器
+    executor(resolve, reject);
+}
+```
+
+相应地，then 方法也需要进行改造。除了返回 this 以外，现在我们会把 resolved 和 rejected 任务没有完全被推入队列时的情况，全部视为 pending 状态。于是在 then 方法中，我们还需要对 pending 做额外处理：
+
+``` 
+// then 方法接收两个函数作为入参（可选）
+CutePromise.prototype.then = function(onResolved, onRejected) {
+  
+
+    // 注意，onResolved 和 onRejected必须是函数；如果不是，我们此处用一个透传来兜底
+    if (typeof onResolved !== 'function') {
+        onResolved = function(x) {return x};
+    }
+    if (typeof onRejected !== 'function') {
+        onRejected = function(e) {throw e};
+    }
+
+ 
+
+    // 依然是保存 this
+    var self = this; 
+    // 判断是否是 resolved 状态
+    if (self.status === 'resolved') {
+        // 如果是 执行对应的处理方法
+        onResolved(self.value); 
+    } else if (self.status === 'rejected') {
+        // 若是 rejected 状态，则执行 rejected 对应方法
+        onRejected(self.reason); 
+    } else if (self.status === 'pending') {
+        // 若是 pending 状态，则只对任务做入队处理
+        self.onResolvedQueue.push(onResolved); 
+        self.onRejectedQueue.push(onRejected); 
+    }
+    return this
+
+}; 
+```
+
+使用ES6让代买看起来更加简洁：
+
+``` 
+class CutePromise {
+    constructor(executor) {
+
+        const resolve = (res) => {
+            if (this.status === 'pending') {
+                this.value = res;
+                this.status = 'resolve'
+                setTimeout(() => {
+                    this.resolvedQueue.forEach(resolve => resolve(res))
+                })
+            }
+        }
+
+        const reject = (rej) => {
+            if (this.status === 'pending') {
+                this.reason = rej
+                this.status = 'reject'
+                setTimeout(() => {
+                    this.rejectedQueue.forEach(resolve => resolve(rej))
+                })
+            }
+        }
+
+        this.value = null
+        this.reason = null
+        this.resolvedQueue = []
+        this.rejectedQueue = []
+        this.status = 'pending'
+
+        executor(resolve, reject)
+    }
+
+    then(onResolved, onRejected) {
+        if (typeof onResolved !== 'function') {
+            onResolved = function (x) {
+                return x
+            };
+        }
+        if (typeof onRejected !== 'function') {
+            onRejected = function (e) {
+                throw e
+            };
+        }
+        if (this.status === 'resolve') {
+            onResolved(this.value)
+        } else if (this.status === 'reject') {
+            onRejected(this.reason)
+        } else {
+            this.resolvedQueue.push(onResolved)
+            this.rejectedQueue.push(onRejected)
+        }
+        return this
+    }
+}
+
+const cutePromise = new CutePromise(function (resolve, reject) {
+    resolve('成了！');
+});
+cutePromise.then((value) => {
+    console.log(value)
+    console.log('我是第 1 个任务')
+}).then(value => {
+    console.log('我是第 2 个任务')
+});
+```
