@@ -94,6 +94,10 @@
 
 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#3-2">3-2. 启底PromiseA+，从零实现Promise</a>
 
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#3-3">3-3. 启底PromiseA+，决议程序（Resolution Procedure）</a>
+
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <a  href="#3-3-1">3-3-1. Promise决议程序</a>
+
 ---
 
 ## <a name="1">JavaScript知识点</a>
@@ -2509,3 +2513,35 @@ cutePromise.then((value) => {
     console.log('我是第 2 个任务')
 });
 ```
+
+### <a  name="3-3">启底Promise/A+, 决议程序（Resolution Procedure）</a>
+
+我们上一节写出来这个 Promise，最明显的一个缺陷就是下一个 then 拿不到上一个 then 的结果。
+
+多次then调用拿到的resolve的值全是第一次resolve的值。
+
+#### <a name='3-3-1'>重新审视 then 方法——理解 Promise 决议程序</a>
+
+前面我们说过，整个 Promise 规范，在方法层面，基本就是围绕着 then 打转。 其中一个最需要引起大家注意的东西叫做 Promise Resolution Procedure(Promise决议程序)。这个名字翻译过来很绕，尤其是“决议”这个动作，看上去挺唬人的。**其实这里的“决议”，描述的就是 resolve 这个动作。决议程序，约束的就是 resolve 应该如何表现。**这个动作和 then 息息相关，所以要想把 then 方法完善起来，我们必须对决议程序的内容有细致的了解。我们一起来看看 Promise/A+ 规范中的相关内容：
+
+决议程序处理是以一个promise和一个value为输入的抽象操作，我们把它表示为
+
+``` 
+[[Resolve]](promise, x)
+```
+
+笔者注：别懵。这种形式看起来太高级了一点也不友好，但这种写法你肯定见过：
+
+``` 
+promise2 = promise1.then(onFulfilled, onRejected);
+```
+
+[[Resolve]](promise, x)。**意思是说如果onFulfilled 或 onRejected 返回了值x， 则执行 Promise 解析流程 [[Resolve]](promise2, x)。**
+
+> 其实关于Promise/A+规范以及决议程序我个人理解是从倒着去推。
+
+* 平常使用的时候then方法中我们返回一个非Promise对象, 相当于直接resolve(非Promise对象)。
+
+* 其实决议程序通俗点说就是决定Promise中then返回值的状态。
+
+*PromiseA+决议程序稍后再进行总结，没有完全吃透。。先放一放*
